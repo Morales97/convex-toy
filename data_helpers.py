@@ -76,3 +76,12 @@ def get_data_distr(num_clients, hidden_dim=100, path='data/linear_regression_dis
 
     x_nat = np.load(path + '/x_natural.npy')
     return A_distr, b_distr, L_i_max, x_nat
+
+def get_mnist():
+    ''' return full mnist dataset '''
+    X_train = np.load('data/mnist/X_train.npy')
+    X_test = np.load('data/mnist/X_test.npy')
+    y_train = np.load('data/mnist/y_train.npy')
+    y_test = np.load('data/mnist/y_test.npy')
+
+    return X_train, y_train, X_test, y_test
