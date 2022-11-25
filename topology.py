@@ -33,23 +33,34 @@ def get_diff_matrix(expt, num_clients):
         for i, c in enumerate(connections):
             W[i] += (np.eye(num_clients, k=c) + np.eye(num_clients, k=c-num_clients))/2
 
+    elif topology == 'random':
+        W = np.eye((num_clients))
+        for i in range(num_clients):
+            indxs = np.arange(num_clients).tolist()
+            indxs.remove(i)
+            edges = np.random.choice(indxs, expt['degree'], replace=False)     # NOTE: NOT considering self-connection for degree
+            W[i][edges] = 1     # degree is in-degree, out-degree is not controlled. W[edges][i] would make degree in out-degree
+        W /= (expt['degree']+1)
+
     return W
 
 def diffuse(W, x, step, expt):
+    x_shape = x.shape
+    x = x.reshape(x.shape[0], -1)       # flatten model parameters
     if expt['topology'] == 'FC_alpha':          # implicit local steps with W
-        return W @ x
+        x = W @ x
 
-    if expt['topology'] == 'FC_randomized_local_steps':     # take a local step with prob (1-p)
+    elif expt['topology'] == 'FC_randomized_local_steps':     # take a local step with prob (1-p)
         p = 1 / (1+expt['local_steps'])
         if np.random.uniform() < p:
-            return W @ x
+            x = W @ x
         else:
-            return x
+            pass
 
-    if expt['local_steps'] > 0 and step % (expt['local_steps']+1) != 0:
-        return x
+    elif expt['local_steps'] > 0 and (step+1) % expt['local_steps'] != 0:
+        pass
 
-    if isinstance(W, list):
+    elif isinstance(W, list):
         if 'time_varying' in expt['topology']:      # time-varying
             x = W[step%len(W)] @ x
         else:
@@ -57,4 +68,6 @@ def diffuse(W, x, step, expt):
                 x = W[i] @ x
     else:
         x = W @ x
-    return x
+    
+    x = x.reshape(*x_shape)             # reshape model parameters
+    return x    

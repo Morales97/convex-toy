@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from numpy import linalg as LA
-
+import pdb
 
 def create_distr_dataset(num_clients, n_samples=400, hidden_dim=100, path='data/linear_regression_distr_var0.001_n16_h', iid=True):
     '''Create a dataset for distributed training
@@ -85,3 +85,42 @@ def get_mnist():
     y_test = np.load('data/mnist/y_test.npy')
 
     return X_train, y_train, X_test, y_test
+
+def get_mnist_distr(n_nodes = 100, data_distr = 'iid'):
+    X_train, y_train, X_test, y_test = get_mnist()
+    assert data_distr in ['iid', 'non-iid']
+
+
+    if data_distr == 'iid':
+        indxs = np.arange(60000)
+    if data_distr == 'non-iid':
+        indices = []
+        for i in range(10):
+            indices.append(np.where(y_train == i)[0])
+        indxs = np.concatenate(indices)     # sorted indices by class
+
+    n_shards = n_nodes * 2 # assign 2 random shards to each node
+    n_samples_per_shard = 60000 // n_shards
+    random_shard_perm = np.random.permutation(np.arange(n_shards))
+    print('Samples per node: %d' % int(n_samples_per_shard*2))     
+    
+    indices_per_node = []
+    for i in range(n_nodes):
+        shard_1 = random_shard_perm[2*i]
+        shard_2 = random_shard_perm[2*i+1]
+        samples_shard_1 = indxs[shard_1*n_samples_per_shard : (shard_1+1)*n_samples_per_shard]
+        samples_shard_2 = indxs[shard_2*n_samples_per_shard : (shard_2+1)*n_samples_per_shard]
+        indices_per_node.append(np.concatenate((samples_shard_1, samples_shard_2)))
+
+    X_distr = []
+    y_distr = []
+    y_distr_OH = []
+    for i in range(n_nodes):    
+        X_distr += [X_train[indices_per_node[i]]]
+        y_distr += [y_train[indices_per_node[i]]]
+
+        y_one_hot = np.zeros((y_distr[-1].shape[0], 10))
+        y_one_hot[np.arange(y_distr[-1].shape[0]), y_distr[-1]] = 1  
+        y_distr_OH += [y_one_hot]
+
+    return X_distr, y_distr, y_distr_OH, X_test, y_test

@@ -38,7 +38,7 @@ def sweep_step_sizes(config, expt):
     steps = []
     for lr_factor in config['lr_factors']:
         config['lr_factor'] = lr_factor
-        step = train(config, expt, config['num_clients'])
+        step = train(config, expt)
         if step == -1:
             break 
         steps.append(step)

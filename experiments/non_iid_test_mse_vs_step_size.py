@@ -31,20 +31,12 @@ def sweep_step_sizes(config, expt):
     mse = []
     for lr_factor in config['lr_factors']:
         config['lr_factor'] = lr_factor
-        mse_test = train(config, expt, config['num_clients'])
+        mse_test = train(config, expt)
         if mse_test > 0.1:
             break 
         mse.append(mse_test)
     return mse
 
-
-def increase_n_keep_lr_test_mse(config, expt):
-    mse = []
-    for i in range(config['num_clients']):
-        mse_test = train(config, expt, n_clients=i+1)
-        mse += [mse_test]
-        print('Workers: %d\tTest MSE: %.5f'%(i+1, mse_test))
-    return mse
 
 def plot_mse_vs_lr(mse, lr_factors, label=None):
     x = lr_factors[:len(mse)]

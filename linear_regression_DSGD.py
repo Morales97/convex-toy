@@ -6,7 +6,11 @@ from data_helpers import create_distr_dataset, create_test_dataset, get_data_dis
 from topology import get_diff_matrix, diffuse
 
 
-def train(config, expt, n_clients):
+def train(config, expt):
+    if 'num_clients' in expt.keys(): 
+        n_clients = expt['num_clients'] # overwrite config when expt has a different (lower) number of nodes
+    else: 
+        n_clients = config['num_clients']
     comm_matrix = get_diff_matrix(expt, n_clients)
     if config['log']: print(comm_matrix)
 
