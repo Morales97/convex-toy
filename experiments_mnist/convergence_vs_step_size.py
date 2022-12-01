@@ -29,8 +29,8 @@ config = {
 expts = [
     # {'topology': 'fully_connected', 'label': 'Fully connected', 'local_steps': 0},
     {'topology': 'centralized', 'label': 'Fully connected', 'local_steps': 0},
-    {'topology': 'fully_connected', 'label': 'Fully connected, 3 local steps', 'local_steps': 3},
-    {'topology': 'fully_connected', 'label': 'Fully connected, 29 local steps', 'local_steps': 29},
+    # {'topology': 'fully_connected', 'label': 'Fully connected, 3 local steps', 'local_steps': 3},
+    # {'topology': 'fully_connected', 'label': 'Fully connected, 29 local steps', 'local_steps': 29},
     {'topology': 'fully_connected', 'label': 'Fully connected, 58 local steps', 'local_steps': 58},
     # {'topology': 'solo', 'label': 'Solo', 'local_steps': 0},
     # {'topology': 'exponential_graph', 'label': 'Exponential graph', 'local_steps': 0},
@@ -41,29 +41,80 @@ expts = [
 
 
 def sweep_step_sizes(config, expt):
-    arr = []
+    arr_epochs = []
+    arr_ECE = []
+    arr_test_loss = []
     for lr_factor in config['lr_factors']:
         config['lr_factor'] = lr_factor
-        accuracies, _, train_loss = train_mnist(config, expt)
+        accuracies, test_loss, train_loss, ECE = train_mnist(config, expt)
         epochs = len(accuracies)
         # steps = len(train_loss)
         if epochs == config['epochs']:
-        # if steps == config['epochs'] * int(60000 // (config['n_nodes']*config['batch_size'])):
             break 
-        arr.append(epochs)
-        # arr.append(steps)
-    return arr
+        arr_epochs.append(epochs)
+        arr_ECE.append(ECE)
+        arr_test_loss.append(test_loss)
 
+    return arr_epochs, arr_ECE, arr_test_loss
 
-def plot_convergence_vs_lr(losses, lr_factors, label=None):
+def plot_convergence_vs_lr(ax, losses, lr_factors, label=None):
     x = lr_factors[:len(losses)]
-    plt.plot(x, losses, label=label)
-    plt.xlabel('LR factor (base LR * factor)')
-    plt.ylabel('Epochs until conv')
+    ax.plot(x, losses, label=label)
+    ax.set_xlabel('LR factor (base LR * factor)')
+    ax.set_ylabel('Epochs until conv')
 
-if __name__ == '__main__':
+
+def plot_ECE_vs_lr(ax, arr_ECE, lr_factors, label=None):
+    x = lr_factors[:len(arr_ECE)]
+    ax.plot(x, arr_ECE, label=label)
+    ax.set_xlabel('LR factor (base LR * factor)')
+    ax.set_ylabel('ECE')
+
+
+def plot_test_loss_vs_lr(ax, arr_test_loss, lr_factors, label=None):
+    x = lr_factors[:len(arr_test_loss)]
+    ax.plot(x, arr_test_loss, label=label)
+    ax.set_xlabel('LR factor (base LR * factor)')
+    ax.set_ylabel('Test loss')
+
+def plot_ECE_and_test_loss_vs_lr(ax, arr_test_loss, arr_ECE, lr_factors, label=None):
+    x = lr_factors[:len(arr_test_loss)]
+    ax2 = ax.twinx()
+    ax.plot(x, arr_test_loss, label=label)
+    ax.set_xlabel('LR factor (base LR * factor)')
+    ax.set_ylabel('Test loss')
+    ax2.plot(x, arr_ECE, ':', linewidth=2)
+    ax2.set_ylabel('ECE (dotted line)')
+
+def plot_all():
+    ''' plot epochs till convergence, final test loss and ECE'''
+
+    fig, ax = plt.subplots(1,3, figsize=(16,5))
     for i in range(len(expts)):
-        arr = sweep_step_sizes(config, expts[i])
-        plot_convergence_vs_lr(arr, config['lr_factors'], expts[i]['label'])
+        arr_epochs, arr_ECE, arr_test_loss = sweep_step_sizes(config, expts[i])
+        plot_convergence_vs_lr(ax[0], arr_epochs, config['lr_factors'], expts[i]['label'])
+        plot_ECE_vs_lr(ax[1], arr_ECE, config['lr_factors'], expts[i]['label'])
+        plot_test_loss_vs_lr(ax[2], arr_test_loss, config['lr_factors'], expts[i]['label'])
     plt.legend()
     plt.show()
+
+def plot_all2():
+    ''' plot epochs till convergence, final test loss and ECE'''
+
+    fig, ax = plt.subplots(1,2, figsize=(11,5))
+    for i in range(len(expts)):
+        arr_epochs, arr_ECE, arr_test_loss = sweep_step_sizes(config, expts[i])
+        plot_convergence_vs_lr(ax[0], arr_epochs, config['lr_factors'], expts[i]['label'])
+        plot_ECE_and_test_loss_vs_lr(ax[1], arr_test_loss, arr_ECE, config['lr_factors'], expts[i]['label'])
+    plt.legend()
+    plt.show()
+
+if __name__ == '__main__':
+    plot_all()
+    # ax = plt.subplot(111)
+    # for i in range(len(expts)):
+    #     arr_epochs, arr_ECE, arr_test_loss = sweep_step_sizes(config, expts[i])
+    #     # plot_convergence_vs_lr(ax, arr_epochs, config['lr_factors'], expts[i]['label'])
+    #     plot_ECE_vs_lr(ax, arr_ECE, config['lr_factors'], expts[i]['label'])
+    # plt.legend()
+    # plt.show()

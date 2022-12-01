@@ -124,3 +124,23 @@ def get_mnist_distr(n_nodes = 100, data_distr = 'iid'):
         y_distr_OH += [y_one_hot]
 
     return X_distr, y_distr, y_distr_OH, X_test, y_test
+
+
+def get_mnist_distr_full_data(n_nodes = 100, n_samples_per_node=60000):
+    ''' Every node has access to the full dataset'''
+    X_train, y_train, X_test, y_test = get_mnist()
+    X_train = X_train[:n_samples_per_node]
+    y_train = y_train[:n_samples_per_node]
+
+    X_distr = []
+    y_distr = []
+    y_distr_OH = []
+    for i in range(n_nodes):    
+        X_distr += [X_train]
+        y_distr += [y_train]
+
+        y_one_hot = np.zeros((y_distr[-1].shape[0], 10))
+        y_one_hot[np.arange(y_distr[-1].shape[0]), y_distr[-1]] = 1  
+        y_distr_OH += [y_one_hot]
+
+    return X_distr, y_distr, y_distr_OH, X_test, y_test

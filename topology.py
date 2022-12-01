@@ -68,6 +68,6 @@ def diffuse(W, x, step, expt):
                 x = W[i] @ x
     else:
         x = W @ x
-    
+            
     x = x.reshape(*x_shape)             # reshape model parameters
     return x    
