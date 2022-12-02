@@ -96,3 +96,11 @@ def plot_calibration_histogram(accuracy_bins, confidence_bins):
     plt.show()
 
 
+def plot_node_disagreement(node_disagreement, node_disagreement_max):
+    steps = np.arange(len(node_disagreement))
+    plt.plot(steps, node_disagreement, label='average')
+    plt.plot(steps, node_disagreement_max, label='max')
+    plt.xlabel('Iterations')
+    plt.ylabel('Model diff norm')
+    plt.legend()
+    plt.show()
